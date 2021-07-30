@@ -285,6 +285,7 @@ class App {
           <span class="workout__value">${workout.duration}</span>
           <span class="workout__unit">min</span>
         </div>
+        
         `; 
         
 
@@ -299,7 +300,11 @@ class App {
             <span class="workout__value">${workout.cadence}</span>
             <span class="workout__unit">spm</span>
           </div>
-        
+          <div class = 'buttons'>
+          <btn class = 'options' id = 'reset'>Reset</btn>
+          <btn class = 'options' id = 'edit'>Edit</btn>
+          <btn class = 'options' id = 'delete'>Delete</btn>
+        </div>
         </li>
         `;
      // html template for cycling
@@ -314,7 +319,11 @@ class App {
         <span class="workout__value">${workout.elevationGain}</span>
         <span class="workout__unit">ft</span>
       </div>
-   
+      <div class = 'buttons'>
+      <btn class = 'options' id = 'reset'>Reset</btn>
+      <btn class = 'options' id = 'edit'>Edit</btn>
+      <btn class = 'options' id = 'delete'>Delete</btn>
+    </div>
       
     </li>
     `;
