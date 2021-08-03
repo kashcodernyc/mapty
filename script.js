@@ -9,6 +9,8 @@ const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 const resetApp = document.querySelector('#reset');
 const deleteApp = document.querySelector('#delete');
+const editApp = document.querySelector('#edit');
+
 
 
 
@@ -97,7 +99,7 @@ class App {
     #mapZoomLevel = 13;
     #mapEvent;
     #workouts = [];
-    #methods = ['this._renderWorkout()'];
+   
     
 
     constructor() {
@@ -117,7 +119,9 @@ class App {
         deleteApp.onclick = function(){
             app.delete();
         }
-        
+        editApp.onclick = function(){
+            app.edit();
+        }
         
     }
    
@@ -383,6 +387,21 @@ class App {
         })
 
     }
+    edit(){
+
+        const dataSet = JSON.parse(localStorage.getItem('workouts'));
+        const lastData = dataSet[dataSet.length - 1];
+        const lastCoords = lastData.coords;
+        this._setLocalStorage();
+        this._showForm();
+        const newData = new Workout(lastCoords, this.distance, this.duration);
+        console.log(newData);
+        this.#workouts.pop(lastData);
+        
+    
+
+    }
+        
     
     
     reset(){
