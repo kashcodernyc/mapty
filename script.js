@@ -15,13 +15,14 @@ const editApp = document.querySelector('#edit');
 
 
 // global variables
-let map, mapEvent
+let map, mapEvent, lat, lng;
 //Parent Class
 class Workout {
 
     date = new Date();
     id = (Date.now() + '').slice(-10);
     clicks = 0;
+
 
     constructor(coords, distance, duration) {
         // this.date = date;
@@ -46,6 +47,8 @@ class Workout {
     click(){
         this.clicks++;
     }
+
+   
 }
 
 
@@ -58,6 +61,8 @@ class Running extends Workout {
         this.cadence = cadence;
         this.calcPace();
         this._setDescription();
+       
+       
     }
 
     calcPace() {
@@ -66,6 +71,7 @@ class Running extends Workout {
         return this.pace;
 
     }
+
 }
 
 
@@ -79,6 +85,8 @@ class Cycling extends Workout {
         this.elevationGain = elevationGain;
         this.calcSpeed();
         this._setDescription();
+        
+        
     }
 
     calcSpeed() {
@@ -99,6 +107,7 @@ class App {
     #mapZoomLevel = 13;
     #mapEvent;
     #workouts = [];
+   
    
     
 
@@ -136,7 +145,14 @@ class App {
             });
     }
 
+  
+
+    
+   
+
+
     _loadMap(position) {
+        
         // creating a variable for lattitude and longitude
         const {latitude} = position.coords;
         const {longitude} = position.coords;
@@ -144,20 +160,25 @@ class App {
 
         const coords = [latitude, longitude];
 
+       
+
         // setting the co-ordinate to the map variable
         this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
-
-
         L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(this.#map);
 
         // (.on) similar to the event listener --> once you click the map, the co-ordinates will be displayed 
         this.#map.on('click', this._showForm.bind(this));
+       
+       
+    
          // For each workout render into the map
          this.#workouts.forEach(work => {
+            
             this._renderWorkoutMarker(work);
         })
+
     }
 
     _showForm(mapE) {
@@ -194,7 +215,7 @@ class App {
         const type = inputType.value;
         const distance = +inputDistance.value;
         const duration = +inputDuration.value;
-        const {lat,lng} = this.#mapEvent.latlng;
+        let {lat,lng} = this.#mapEvent.latlng;
         let workout;
 
 
@@ -229,6 +250,10 @@ class App {
             workout = new Cycling([lat, lng], distance, duration, elevation);
         
         }
+        // fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`)
+        //     .then(res => res.json())
+        //     .then(res => console.log(`you worked out in ${res.staddress}, ${res.city}`))
+        
 
         // Add new object to workout array
         this.#workouts.push(workout);
@@ -250,10 +275,45 @@ class App {
 
 
     }
+
+    
     _renderWorkoutMarker(workout){
+        const apiKey = 'f0a32881413367c192b8f613a2aac828';
+        let[lat,lng] = workout.coords;
+        
+        // const getLocation = function () {
+        //     return new Promise(function(resolve, reject){
+        // const url = fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`)
+        // .then(res => res.json())
+        // .then(res => {
+        //     console.log(`${res.staddress}, ${res.city}`);
+        //     return `${res.staddress}, ${res.city}`;
+        // }).catch(err => console.error(err));
+       
+
+        
+        
+        
+
+    const getLocation = fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`)
+    .then(res => res.json())
+    .then(res => {
+        console.log(`${res.staddress}, ${res.city}`);
+    })
+    
+    const getWeather = fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=imperial`)
+    .then(res => res.json())
+    .then(res =>{
+        console.log(`the weather in ${res.name} is ${res.main.temp}`);
+    })
+      
+
+
+
     // show the form
     // .popup is used to add properties to the popup bar.
     // to bind methods 'this' should be returned
+   
         
         L.marker(workout.coords)
             .addTo(this.#map)
@@ -263,14 +323,16 @@ class App {
                     minwidth: 100,
                     autoClose: false,
                     closeOnClick: false,
+                    mobile: true,
                     className: `${workout.type}-popup`,
                 })
             )
             // setup the text of the pop up
-            .setPopupContent(`${workout.type === 'running' ? '🏃‍♂️' :'🚴‍♀️'} ${workout.description}`)
+            .setPopupContent(`${workout.type === 'running' ? '🏃‍♂️' :'🚴‍♀️'} ${workout.description} ${getWeather}`)
             .openPopup();
 
-    }
+    
+}
 
     _renderWorkout(workout){
     // html template for running
@@ -303,6 +365,9 @@ class App {
             <span class="workout__icon">🦶🏼</span>
             <span class="workout__value">${workout.cadence}</span>
             <span class="workout__unit">spm</span>
+          </div>
+          <div>
+          <p>${workout.location}</p>
           </div>
           <div class = 'buttons'>
           <btn class = 'options' id = 'reset'>Reset</btn>
@@ -369,6 +434,7 @@ class App {
         localStorage.setItem('workouts', JSON.stringify(this.#workouts));
        
     }
+    
     _getLocalStorage(){
         // JSON.parse --> converts stings into data set
         // Objects coming from local storage will not inherit all the methods
@@ -383,20 +449,22 @@ class App {
         // For each workout render the workout
         this.#workouts.forEach(work => {
             this._renderWorkout(work);
-        
         })
+        }
 
-    }
+    
     edit(){
 
         const dataSet = JSON.parse(localStorage.getItem('workouts'));
         const lastData = dataSet[dataSet.length - 1];
         const lastCoords = lastData.coords;
         this._setLocalStorage();
-        this._showForm();
         const newData = new Workout(lastCoords, this.distance, this.duration);
         console.log(newData);
-        this.#workouts.pop(lastData);
+        this._newWorkout(newData);
+        this._showForm();
+        
+       
         
     
 
@@ -418,12 +486,6 @@ class App {
         location.reload();
         console.log(this.#workouts);
     }
-
-   
-    
-   
-   
-    
 
 }
 
@@ -448,4 +510,6 @@ const app = new App();
 
 
 
-// 
+
+
+
