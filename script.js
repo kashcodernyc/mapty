@@ -107,7 +107,7 @@ class App {
     #mapZoomLevel = 13;
     #mapEvent;
     #workouts = [];
-   
+    #apiKey = 'f0a32881413367c192b8f613a2aac828';
    
     
 
@@ -175,8 +175,9 @@ class App {
     
          // For each workout render into the map
          this.#workouts.forEach(work => {
-            
             this._renderWorkoutMarker(work);
+           
+            
         })
 
     }
@@ -250,10 +251,6 @@ class App {
             workout = new Cycling([lat, lng], distance, duration, elevation);
         
         }
-        // fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`)
-        //     .then(res => res.json())
-        //     .then(res => console.log(`you worked out in ${res.staddress}, ${res.city}`))
-        
 
         // Add new object to workout array
         this.#workouts.push(workout);
@@ -264,56 +261,55 @@ class App {
 
         // REnder workout on list
         this._renderWorkout(workout)
+
         
         //Hide form + clear input fields;
         this._hideForm()
 
         // Set local storage to all workouts
         this._setLocalStorage();
+
+        
         
 
 
 
     }
 
+
+    
     
     _renderWorkoutMarker(workout){
-        const apiKey = 'f0a32881413367c192b8f613a2aac828';
         let[lat,lng] = workout.coords;
-        
-        // const getLocation = function () {
-        //     return new Promise(function(resolve, reject){
-        // const url = fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`)
-        // .then(res => res.json())
-        // .then(res => {
-        //     console.log(`${res.staddress}, ${res.city}`);
-        //     return `${res.staddress}, ${res.city}`;
-        // }).catch(err => console.error(err));
        
-
-        
-        
-        
-
-    const getLocation = fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`)
-    .then(res => res.json())
-    .then(res => {
-        console.log(`${res.staddress}, ${res.city}`);
-    })
-    
-    const getWeather = fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=imperial`)
-    .then(res => res.json())
-    .then(res =>{
-        console.log(`the weather in ${res.name} is ${res.main.temp}`);
-    })
-      
-
-
 
     // show the form
     // .popup is used to add properties to the popup bar.
     // to bind methods 'this' should be returned
-   
+    const getLocation = async function () {
+        try{
+        const urlGeo = await fetch(`https://geocode.xyz/${lat},${lng}?geoit=json`);
+
+        if(!urlGeo.ok) throw new Error(`Problem with the geolocation api`)
+        const jsonGeo = await urlGeo.json();
+        console.log(`${jsonGeo.staddress}, ${jsonGeo.city}`)
+        } catch (err) {
+            console.error(`${err}`);
+        }
+}
+
+getLocation();
+
+    const getWeather = fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${this.#apiKey}&units=imperial`)
+    .then(res => res.json())
+    .then(res => 
+        console.log(`the weather in ${res.name} is ${res.main.temp}`))
+    .catch(err => 
+        console.error(`${err}`));
+    
+
+
+
         
         L.marker(workout.coords)
             .addTo(this.#map)
@@ -328,7 +324,7 @@ class App {
                 })
             )
             // setup the text of the pop up
-            .setPopupContent(`${workout.type === 'running' ? '🏃‍♂️' :'🚴‍♀️'} ${workout.description} ${getWeather}`)
+            .setPopupContent(`${workout.type === 'running' ? '🏃‍♂️' :'🚴‍♀️'} ${workout.description} ${workout.getLocation} `)
             .openPopup();
 
     
@@ -463,10 +459,6 @@ class App {
         console.log(newData);
         this._newWorkout(newData);
         this._showForm();
-        
-       
-        
-    
 
     }
         
